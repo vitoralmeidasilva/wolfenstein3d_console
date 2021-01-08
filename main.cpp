@@ -6,9 +6,9 @@
 // https://www.youtube.com/watch?v=xW8skO7MFYw
 
 
+// TODO: is the player starting position alright?
 // TODO: rotate player correctly
 // TODO: convert to olcConsoleGameEngine (make a backup first)
-// TODO: make a way to print the map name
 // TODO: shrink data sizes where possible
 // TODO: implement minimap (screen = 120x40, map = 64x64)
 // TODO: bonus = understand all the process (MATH) of the raycasting
@@ -39,8 +39,9 @@ int nMapHeight = 64, nMapWidth = 64;
 float fFOV = 3.14159 / 4.0; // something like PI / 4 (quite a narrow field of view) [45 degrees]
 float fDepth = 16.0f;
 
+std::string sLevelName;
 
-std::wstring LoadWolf3dMap(const uint8_t nEpisode, const uint8_t nLevel, float& fPlayerPosX, float& fPlayerPosY, float& fPlayerAng)
+std::wstring LoadWolf3dMap(const uint8_t nEpisode, const uint8_t nLevel, float& fPlayerPosX, float& fPlayerPosY, float& fPlayerAng, std::string& levelName)
 {
 	constexpr int nTotalPlanes = 3; // number of planes available for each level
 	const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10;
@@ -296,6 +297,7 @@ std::wstring LoadWolf3dMap(const uint8_t nEpisode, const uint8_t nLevel, float& 
 	gamemapFile.read((char*)&levelHeader.nHeight, sizeof(uint16_t));
 
 	levelHeader.sName = ReadString(gamemapFile, 16);
+	levelName = levelHeader.sName;
 
 
 	// Note that for Wolfenstein 3D, a 4 - byte signature string("!ID!") will normally be present directly after the level name.
@@ -369,16 +371,16 @@ int main()
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 
-	std::wstring map = LoadWolf3dMap(1, 1, fPlayerX, fPlayerY, fPlayerA); // E1M1
-	//std::wstring map = LoadWolf3dMap(1, 2, fPlayerX, fPlayerY, fPlayerA); // E1M2
-	//std::wstring map = LoadWolf3dMap(1, 3, fPlayerX, fPlayerY, fPlayerA); // E1M3
-	//std::wstring map = LoadWolf3dMap(1, 4, fPlayerX, fPlayerY, fPlayerA); // E1M4
-	//std::wstring map = LoadWolf3dMap(1, 5, fPlayerX, fPlayerY, fPlayerA); // E1M5
-	//std::wstring map = LoadWolf3dMap(1, 6, fPlayerX, fPlayerY, fPlayerA); // E1M6
-	//std::wstring map = LoadWolf3dMap(1, 7, fPlayerX, fPlayerY, fPlayerA); // E1M7
-	//std::wstring map = LoadWolf3dMap(1, 8, fPlayerX, fPlayerY, fPlayerA); // E1M8
-	//std::wstring map = LoadWolf3dMap(1, 9, fPlayerX, fPlayerY, fPlayerA); // E1M9
-	//std::wstring map = LoadWolf3dMap(1, 10, fPlayerX, fPlayerY, fPlayerA); // E1M10
+	std::wstring map = LoadWolf3dMap(1, 1, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M1
+	//std::wstring map = LoadWolf3dMap(1, 2, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M2
+	//std::wstring map = LoadWolf3dMap(1, 3, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M3
+	//std::wstring map = LoadWolf3dMap(1, 4, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M4
+	//std::wstring map = LoadWolf3dMap(1, 5, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M5
+	//std::wstring map = LoadWolf3dMap(1, 6, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M6
+	//std::wstring map = LoadWolf3dMap(1, 7, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M7
+	//std::wstring map = LoadWolf3dMap(1, 8, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M8
+	//std::wstring map = LoadWolf3dMap(1, 9, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M9
+	//std::wstring map = LoadWolf3dMap(1, 10, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M10
 
 	auto tp1 = std::chrono::system_clock::now();
 	auto tp2 = std::chrono::system_clock::now();
@@ -534,8 +536,8 @@ int main()
 		}
 
 		// Display stats
-		//swprintf_s(screen, 40, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime); // TODO: why it's not working anymore?
-
+		swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
+		
 		/*
 		// Display Map
 		for (int nx = 0; nx < nMapWidth; nx++)
