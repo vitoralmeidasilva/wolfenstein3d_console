@@ -1,0 +1,38 @@
+		//headFile.seekg(0, std::ios::end); int nHeadFileSize = headFile.tellg();
+		//std::vector<uint8_t> buffer; buffer.resize(nHeadFileSize);
+		//headFile.seekg(0, std::ios::beg); headFile.read((char*)buffer.data(), nHeadFileSize);
+		//header.nMagicWord = ((buffer[1] << 8) | buffer[0]);
+		//header.nMagicWord = Read16(headFile);
+
+			// Helper Utilities ====================
+	// (NOOO) input = file path, output = vector<uint8_t> (FileGetBinaryContent)
+	//auto Read16 = [](const std::ifstream& ifs)
+	//{
+	//	return ((ifs.get() << 8) | ifs.get());
+	//};
+
+		/*
+	// Extract the Huffman's coding table ====================
+	// The VGADICT file contains the Huffman Node Tree
+	std::array<uint8_t, 1024> dictionary; // the file is 1024 bytes long and contains 256 nodes, each node is 4 bytes long
+	std::vector<std::pair<uint16_t, uint16_t>> vecHuffNodes;
+	std::ifstream dictionaryFile;
+	dictionaryFile.open("./resources/VGADICT.WL1", std::ifstream::binary);
+	if (dictionaryFile.is_open())
+	{
+		dictionaryFile.read((char*)&dictionary, dictionary.size());
+
+		// first node = 0
+		// last node = 255 (never used)
+
+		for (size_t nOffset = 0; nOffset < dictionary.size(); nOffset += sizeof(uint32_t))
+		{
+			vecHuffNodes.push_back(std::make_pair(
+				(dictionary[nOffset + 0] | (dictionary[nOffset + 1] << 8)), // bit0
+				(dictionary[nOffset + 2] | (dictionary[nOffset + 3] << 8))  // bit1
+			));
+		}
+
+		dictionaryFile.close();
+	}
+	*/
