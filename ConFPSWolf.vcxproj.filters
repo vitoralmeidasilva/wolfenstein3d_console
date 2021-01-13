@@ -22,4 +22,9 @@
   <ItemGroup>
     <Text Include="docs\drafts.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="olcConsoleGameEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
