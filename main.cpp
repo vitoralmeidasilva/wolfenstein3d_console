@@ -6,18 +6,23 @@
 // https://www.youtube.com/watch?v=xW8skO7MFYw
 
 
-// TODO: is the player starting position alright? no it is not (is this a rendering or direction problem?)
+// TODO: split the project into other files if necessary
+
+// TODO: implement keys (N = next level, P = previous level)
+
+// TODO: bonus = understand all the process (MATH) of the raycasting
+// TODO: correct tile rendering order, player positioning and initial rotation angle
+// TODO: draw a compass
 // TODO: implement strafing
-// TODO: implement keys (m = minimap, N = next level, P = previous level)
-// TODO: rotate player correctly (0 = south)
+// TODO: implement mouse control
+
 // TODO: shrink data sizes where possible
 // TODO: color code wall data based on tile index (instead of sampling textures)? or make a mode where the wall texture is shown (sprites?)
-// TODO: bonus = understand all the process (MATH) of the raycasting
-// TODO: draw stats using std::string (or wstring)
 // TODO: migrate to olcPixelGameEngine (extract and sample textures)
 
 #include <iostream>
 #include <fstream> // ifstream
+#include <sstream> // stringstream
 #include <chrono> // time control
 #include <utility> // pair
 #include <algorithm> // sort, find
@@ -40,22 +45,36 @@ public:
 
 	virtual bool OnUserCreate()
 	{
+		bIsMinimapVisible = true;
+
 		map = LoadWolf3dMap(1, 1, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M1
-		//std::wstring map = LoadWolf3dMap(1, 2, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M2
-		//std::wstring map = LoadWolf3dMap(1, 3, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M3
-		//std::wstring map = LoadWolf3dMap(1, 4, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M4
-		//std::wstring map = LoadWolf3dMap(1, 5, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M5
-		//std::wstring map = LoadWolf3dMap(1, 6, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M6
-		//std::wstring map = LoadWolf3dMap(1, 7, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M7
-		//std::wstring map = LoadWolf3dMap(1, 8, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M8
-		//std::wstring map = LoadWolf3dMap(1, 9, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M9
-		//std::wstring map = LoadWolf3dMap(1, 10, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M10
+		//map = LoadWolf3dMap(1, 2, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M2
+		//map = LoadWolf3dMap(1, 3, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M3
+		//map = LoadWolf3dMap(1, 4, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M4
+		//map = LoadWolf3dMap(1, 5, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M5
+		//map = LoadWolf3dMap(1, 6, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M6
+		//map = LoadWolf3dMap(1, 7, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M7
+		//map = LoadWolf3dMap(1, 8, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M8
+		//map = LoadWolf3dMap(1, 9, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M9
+		//map = LoadWolf3dMap(1, 10, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M10
 		return true;
 	}
 
 	virtual bool OnUserUpdate(float fElapsedTime)
 	{
 		// Controls
+		// Minimap
+		if (m_keys[L'M'].bPressed)
+			bIsMinimapVisible = !bIsMinimapVisible;
+		/*
+		// Next level
+		if (m_keys[L'N'].bPressed)
+			// next level
+		// Previous level
+		if (m_keys[L'P'].bPressed)
+			// previous level
+		*/
+
 		// Handle CCW Rotation
 		if (m_keys[L'A'].bHeld)
 			fPlayerA -= (0.8f) * fElapsedTime; // 0.1 radians per frame update
@@ -160,7 +179,7 @@ public:
 			// for the ceiling, we want to take the midpoint and from that we are subtracting a proportion of the screen height relative to distance to wall
 			// as distance to wall gets larger, this subtraction (- ScreenWidth() / ((float)fDistanceToWall)) gets smaller
 			// and therefore we have a higher ceiling
-			int nCeiling = (float)(ScreenHeight() / 2.0) - ScreenHeight() / ((float)fDistanceToWall);
+			int nCeiling = (int)((float)(ScreenHeight() / 2.0) - ScreenHeight() / ((float)fDistanceToWall));
 
 			// the floor in our case is just a mirror of the ceiling
 			int nFloor = ScreenHeight() - nCeiling;
@@ -199,38 +218,27 @@ public:
 		}
 
 		// Display stats
+		// TODO: do I put this into a lambda function?
 		//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
+		std::stringstream ss; ss << "X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime) << ", LEVEL=" << sLevelName.c_str();
+		std::string sHud = ss.str(); // convert std::stringstream to std::string
+		std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
+		DrawString(0, 0, wsHud);
 
-		// Display Map (only displaying half)
-		for (int nx = 0; nx < nMapWidth; nx++)
-			for (int ny = 0; ny < nMapHeight; ny++)
-			{
-				// + 1 here to not overwrite the stats
-				//screen[(ny + 1) * ScreenWidth() + nx] = map[ny * nMapWidth + nx];
-				Draw(nx + 1, ny + 1, map[ny * nMapWidth + nx]);
-			}
 
-		// marker to show where the player is
-		//screen[((int)fPlayerY + 1) * ScreenWidth() + (int)fPlayerX] = 'P';
-		Draw((int)fPlayerX, (int)fPlayerY, L'P');
-		
-		/*
-// NEW MINIMAP (screen = 120x40), map = 16x16
-		for (int nx = 0; nx < 16; nx++)
-			for (int ny = 0; ny < 16; ny++)
-			{
-				float fMapX = (fPlayerX + nx); if (fMapX >= 64.0f) fMapX = 63.0f;
-				float fMapY = (fPlayerY + ny); if (fMapY >= 64.0f) fMapY = 63.0f;
+		if (bIsMinimapVisible)
+		{
+			// Display Map (only displaying half)
+			for (int nx = 0; nx < nMapWidth; nx++)
+				for (int ny = 0; ny < nMapHeight; ny++)
+				{
+					// + 1 here to not overwrite the stats
+					Draw(nx, ny + 1, map[ny * nMapWidth + nx]);
+				}
 
-				// + 1 here to not overwrite the stats
-				//screen[(ny + 1) * 16 + nx] = map[fMapY * nMapWidth + fMapX];
-				Draw(nx, (ny + 1), map[fMapY * nMapWidth + fMapX]);
-			}
-
-		// marker to show where the player is
-		//screen[((int)fPlayerY + 1) * 16 + (int)fPlayerX] = 'P';
-		Draw((int)fPlayerX, ((int)fPlayerY + 1), L'P');
-		*/
+			// marker to show where the player is
+			Draw((int)fPlayerX, (int)fPlayerY + 1, L'P');
+		}
 
 		return true;
 	}
@@ -245,10 +253,12 @@ private:
 	int nMapHeight = 64, nMapWidth = 64;
 	std::wstring map;
 
-	float fFOV = 3.14159 / 4.0; // something like PI / 4 (quite a narrow field of view) [45 degrees]
+	float fFOV = 3.14159f / 4.0f; // something like PI / 4 (quite a narrow field of view) [45 degrees]
 	float fDepth = 16.0f;
 
 	std::string sLevelName;
+
+	bool bIsMinimapVisible;
 
 	std::wstring LoadWolf3dMap(const uint8_t nEpisode, const uint8_t nLevel, float& fPlayerPosX, float& fPlayerPosY, float& fPlayerAng, std::string& levelName)
 	{
@@ -391,7 +401,7 @@ private:
 		};
 
 		// Reads plane data from map file
-		auto ReadPlaneData = [&ReadBuffer2Vector, &CarmackExpand, &RLEWExpand](std::ifstream& ifs, const uint32_t nOffset, const uint16_t nLength, const uint16_t nRLE)
+		auto ReadPlaneData = [&](std::ifstream& ifs, const uint32_t nOffset, const uint16_t nLength, const uint16_t nRLE)
 		{
 			// For each plane:
 
@@ -423,7 +433,7 @@ private:
 		struct sHeader
 		{
 			uint16_t nMagicWord = 0; // The first is the magic word or flag used for RLEW compression, which is always $ABCD.
-			uint32_t nMaps[100]; // The second is 100 pointers to start of level 0-99 data in the GAMEMAPS file (relative to the start of that file); Where the data for the level is located
+			uint32_t nMaps[100]{}; // The second is 100 pointers to start of level 0-99 data in the GAMEMAPS file (relative to the start of that file); Where the data for the level is located
 			uint8_t nTotalMaps = 0; // number of maps available [1-100]
 
 			const uint16_t nFlag = 0xABCD; // flag used for RLEW compression (interpreted as big endian 0xABCD but stored as little endian: 0xCDAB)
@@ -457,7 +467,7 @@ private:
 		// - Plane 1 is foreground and uses masked tiles (Objects)
 		// - Plane 2 is sprite/info (Extra)
 		// Levels must contain a background plane and usually an infoplane
-		typedef std::tuple<uint32_t, uint16_t, std::vector<uint8_t>> plane_t;
+		using plane_t = std::tuple<uint32_t, uint16_t, std::vector<uint8_t>>;
 		struct sLevelHeader
 		{
 			// 3 Planes available for the map. Each plane has three attributes:
@@ -470,8 +480,8 @@ private:
 			//  - plane 2: The third grid is used to contain operational and logical information about the level. It holds the "turning points" for the game's enemies. And other information used by the game engine.
 			plane_t planes[nTotalPlanes];
 
-			uint16_t nWidth; // Width of level (in tiles)
-			uint16_t nHeight; // Height of level (in tiles)
+			uint16_t nWidth{}; // Width of level (in tiles)
+			uint16_t nHeight{}; // Height of level (in tiles)
 
 			std::string sName; // Internal name for level (used only by editor, not displayed in-game. null-terminated)
 		} levelHeader;
@@ -550,8 +560,8 @@ private:
 			if (bIsPlayer)
 			{
 				//vecPlayerStartingPositions.push_back(std::make_tuple(nTiX, nTiY));
-				fPlayerPosX = nTiX;
-				fPlayerPosY = nTiY;
+				fPlayerPosX = (float)nTiX;
+				fPlayerPosY = (float)nTiY;
 
 				//const float fStartPlayerAngles[] = { 0.0f, 1.5708f, 3.14159f, 4.71239f }; // startup player angle in radians (0 = north, 90 = east, 180 = south, 270 = west)
 				//const float fStartPlayerAngles[] = { 
