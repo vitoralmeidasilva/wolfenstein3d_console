@@ -6,19 +6,18 @@
 // https://www.youtube.com/watch?v=xW8skO7MFYw
 
 
-// TODO: split the project into other files if necessary
+// REFERENCES:
+// https://permadi.com/1996/05/ray-casting-tutorial-table-of-contents/
+// https://lodev.org/cgtutor/raycasting.html
+// https://lodev.org/cgtutor/raycasting2.html
+// https://lodev.org/cgtutor/raycasting3.html
 
-// TODO: implement keys (N = next level, P = previous level)
-
-// TODO: bonus = understand all the process (MATH) of the raycasting
+// TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: correct tile rendering order, player positioning and initial rotation angle
 // TODO: draw a compass
 // TODO: implement strafing
 // TODO: implement mouse control
-
 // TODO: shrink data sizes where possible
-// TODO: color code wall data based on tile index (instead of sampling textures)? or make a mode where the wall texture is shown (sprites?)
-// TODO: migrate to olcPixelGameEngine (extract and sample textures)
 
 #include <iostream>
 #include <fstream> // ifstream
@@ -47,16 +46,8 @@ public:
 	{
 		bIsMinimapVisible = true;
 
-		map = LoadWolf3dMap(1, 1, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M1
-		//map = LoadWolf3dMap(1, 2, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M2
-		//map = LoadWolf3dMap(1, 3, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M3
-		//map = LoadWolf3dMap(1, 4, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M4
-		//map = LoadWolf3dMap(1, 5, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M5
-		//map = LoadWolf3dMap(1, 6, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M6
-		//map = LoadWolf3dMap(1, 7, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M7
-		//map = LoadWolf3dMap(1, 8, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M8
-		//map = LoadWolf3dMap(1, 9, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M9
-		//map = LoadWolf3dMap(1, 10, fPlayerX, fPlayerY, fPlayerA, sLevelName); // E1M10
+		map = LoadWolf3dMap();
+
 		return true;
 	}
 
@@ -66,14 +57,44 @@ public:
 		// Minimap
 		if (m_keys[L'M'].bPressed)
 			bIsMinimapVisible = !bIsMinimapVisible;
-		/*
+
 		// Next level
 		if (m_keys[L'N'].bPressed)
-			// next level
+		{
+			nLevel = ++nLevel % (nLevelsPerEpisode + 1); // [1 10]
+			if (nLevel == 0)
+			{
+				nLevel = 1;
+				nEpisode = ++nEpisode % (nMaxEpisodes + 1); // [1 3]
+
+				if (nEpisode == 0)
+				{
+					nLevel = 1;
+					nEpisode = 1;
+				}
+			}
+
+			map = LoadWolf3dMap();
+		}
+
 		// Previous level
 		if (m_keys[L'P'].bPressed)
-			// previous level
-		*/
+		{
+			nLevel = --nLevel % (nLevelsPerEpisode + 1); // [1 10]
+			if (nLevel == 0)
+			{
+				nLevel = 1;
+				nEpisode = --nEpisode % (nMaxEpisodes + 1); // [1 3]
+
+				if (nEpisode == 0)
+				{
+					nLevel = 1;
+					nEpisode = 1;
+				}
+			}
+
+			map = LoadWolf3dMap();
+		}
 
 		// Handle CCW Rotation
 		if (m_keys[L'A'].bHeld)
@@ -246,24 +267,24 @@ public:
 private:
 	float fPlayerX = 0.0f;
 	float fPlayerY = 0.0f;
-
 	float fPlayerA = 0.0f; // in radians
 	float fSpeed = 5.0f; // walking speed
 
 	int nMapHeight = 64, nMapWidth = 64;
 	std::wstring map;
-
-	float fFOV = 3.14159f / 4.0f; // something like PI / 4 (quite a narrow field of view) [45 degrees]
-	float fDepth = 16.0f;
-
 	std::string sLevelName;
+
+	float fDepth = 16.0f;
+	float fFOV = 3.14159f / 4.0f; // something like PI / 4 (quite a narrow field of view) [45 degrees]
 
 	bool bIsMinimapVisible;
 
-	std::wstring LoadWolf3dMap(const uint8_t nEpisode, const uint8_t nLevel, float& fPlayerPosX, float& fPlayerPosY, float& fPlayerAng, std::string& levelName)
+	const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10, nMaxEpisodes = 1;
+	uint8_t nEpisode = 1, nLevel = 1; // E1M1 = startup map
+
+	std::wstring LoadWolf3dMap()
 	{
 		constexpr int nTotalPlanes = 3; // number of planes available for each level
-		const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10;
 		const uint8_t nAbsLevelNumber = (nEpisode == 1) ? nLevel : ((nEpisode * nLevelsPerEpisode) - nLevelsPerEpisode) + nLevel;
 
 		// Helper Utilities ====================
@@ -516,7 +537,7 @@ private:
 		gamemapFile.read((char*)&levelHeader.nHeight, sizeof(uint16_t));
 
 		levelHeader.sName = ReadString(gamemapFile, 16);
-		levelName = levelHeader.sName;
+		sLevelName = levelHeader.sName;
 
 
 		// Note that for Wolfenstein 3D, a 4 - byte signature string("!ID!") will normally be present directly after the level name.
@@ -560,8 +581,8 @@ private:
 			if (bIsPlayer)
 			{
 				//vecPlayerStartingPositions.push_back(std::make_tuple(nTiX, nTiY));
-				fPlayerPosX = (float)nTiX;
-				fPlayerPosY = (float)nTiY;
+				fPlayerX = (float)nTiX;
+				fPlayerY = (float)nTiY;
 
 				//const float fStartPlayerAngles[] = { 0.0f, 1.5708f, 3.14159f, 4.71239f }; // startup player angle in radians (0 = north, 90 = east, 180 = south, 270 = west)
 				//const float fStartPlayerAngles[] = { 
