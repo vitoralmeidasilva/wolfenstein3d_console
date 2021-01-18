@@ -14,6 +14,7 @@
 
 // TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: correct tile rendering order, player positioning and initial rotation angle
+// TODO: color code walls based on tile index (immersion, must be done manually)
 // TODO: draw a compass
 // TODO: implement strafing
 // TODO: implement mouse control
@@ -44,8 +45,6 @@ public:
 
 	virtual bool OnUserCreate()
 	{
-		bIsMinimapVisible = true;
-
 		map = LoadWolf3dMap();
 
 		return true;
@@ -53,10 +52,17 @@ public:
 
 	virtual bool OnUserUpdate(float fElapsedTime)
 	{
-		// Controls
 		// Minimap
 		if (m_keys[L'M'].bPressed)
 			bIsMinimapVisible = !bIsMinimapVisible;
+
+		// Help dialog
+		if (m_keys[L'H'].bPressed)
+			bIsHelpDialogVisible = !bIsHelpDialogVisible;
+
+		// Debug info
+		if (m_keys[L'I'].bPressed)
+			bIsDebugInfoVisible = !bIsDebugInfoVisible;
 
 		// Next level
 		if (m_keys[L'N'].bPressed)
@@ -69,8 +75,8 @@ public:
 
 				if (nEpisode == 0)
 				{
-					nLevel = 1;
-					nEpisode = 1;
+					nLevel = nLevelsPerEpisode;
+					nEpisode = nMaxEpisodes;
 				}
 			}
 
@@ -96,6 +102,7 @@ public:
 			map = LoadWolf3dMap();
 		}
 
+		// Controls
 		// Handle CCW Rotation
 		if (m_keys[L'A'].bHeld)
 			fPlayerA -= (0.8f) * fElapsedTime; // 0.1 radians per frame update
@@ -220,9 +227,9 @@ public:
 			for (int y = 0; y < ScreenHeight(); y++)
 			{
 				if (y < nCeiling) // the cell must be part of the ceiling
-					Draw(x, y, L' '); // sky
+					Draw(x, y, 0x2588, nCeilingColors[nAbsLevelNumber - 1]); // sky (0x2588 == █ full block)
 				else if (y > nCeiling && y <= nFloor)
-					Draw(x, y, nShade); // wall
+					Draw(x, y, nShade, FG_BLUE); // wall
 				else
 				{
 					// Shade floor based on distance
@@ -232,19 +239,22 @@ public:
 					else if (b < 0.75)	nShadeFloor = '.';
 					else if (b < 0.9)	nShadeFloor = '-';
 					else				nShadeFloor = ' ';
-					Draw(x, y, nShadeFloor); // floor
+					Draw(x, y, nShadeFloor, FG_GREY); // floor
 				}
 			}
 
 		}
 
 		// Display stats
-		// TODO: do I put this into a lambda function?
-		//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
-		std::stringstream ss; ss << "X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime) << ", LEVEL=" << sLevelName.c_str();
-		std::string sHud = ss.str(); // convert std::stringstream to std::string
-		std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
-		DrawString(0, 0, wsHud);
+		if (bIsDebugInfoVisible)
+		{
+			// TODO: do I put this into a lambda function? does it is worth? how so?
+			//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
+			std::stringstream ss; ss << "X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime) << ", LEVEL=" << sLevelName.c_str();
+			std::string sHud = ss.str(); // convert std::stringstream to std::string
+			std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
+			DrawString(0, 0, wsHud, FG_GREEN);
+		}
 
 
 		if (bIsMinimapVisible)
@@ -254,38 +264,60 @@ public:
 				for (int ny = 0; ny < nMapHeight; ny++)
 				{
 					// + 1 here to not overwrite the stats
-					Draw(nx, ny + 1, map[ny * nMapWidth + nx]);
+					Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx]);
 				}
 
 			// marker to show where the player is
-			Draw((int)fPlayerX, (int)fPlayerY + 1, L'P');
+			Draw((int)fPlayerX + 1, (int)fPlayerY + 2, L'P');
+		}
+
+		if (bIsHelpDialogVisible)
+		{
+			int x = 85, y = 20, c = FG_GREEN;
+
+			DrawString(x, y++, L"*** INSTRUCTIONS ***", c);
+			y += 2;
+
+			DrawString(x, y++, L"H = TOGGLE HELP DIALOG", c);
+			DrawString(x, y++, L"ASDFW = MOVEMENT", c);
+			DrawString(x, y++, L"M = MINIMAP", c);
+			DrawString(x, y++, L"I = DEBUG INFO", c);
+			DrawString(x, y++, L"N = NEXT LEVEL", c);
+			DrawString(x, y++, L"P = PREVIOUS LEVEL", c);
 		}
 
 		return true;
 	}
 
 private:
+	// player
 	float fPlayerX = 0.0f;
 	float fPlayerY = 0.0f;
 	float fPlayerA = 0.0f; // in radians
 	float fSpeed = 5.0f; // walking speed
 
+	// map & level
 	int nMapHeight = 64, nMapWidth = 64;
 	std::wstring map;
 	std::string sLevelName;
+	const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10, nMaxEpisodes = 1;
+	uint8_t nEpisode = 1, nLevel = 1, nAbsLevelNumber; // E1M1 = startup map
+	COLOUR nCeilingColors[10] = { FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_MAGENTA };
 
+	// projection
 	float fDepth = 16.0f;
 	float fFOV = 3.14159f / 4.0f; // something like PI / 4 (quite a narrow field of view) [45 degrees]
 
-	bool bIsMinimapVisible;
+	// UI
+	bool bIsMinimapVisible = true;
+	bool bIsHelpDialogVisible = true;
+	bool bIsDebugInfoVisible = true;
 
-	const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10, nMaxEpisodes = 1;
-	uint8_t nEpisode = 1, nLevel = 1; // E1M1 = startup map
 
 	std::wstring LoadWolf3dMap()
 	{
 		constexpr int nTotalPlanes = 3; // number of planes available for each level
-		const uint8_t nAbsLevelNumber = (nEpisode == 1) ? nLevel : ((nEpisode * nLevelsPerEpisode) - nLevelsPerEpisode) + nLevel;
+		nAbsLevelNumber = (nEpisode == 1) ? nLevel : ((nEpisode * nLevelsPerEpisode) - nLevelsPerEpisode) + nLevel;
 
 		// Helper Utilities ====================
 
