@@ -14,7 +14,6 @@
 
 // TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: correct tile rendering order, player positioning and initial rotation angle
-// TODO: color code walls based on tile index (immersion, must be done manually)
 // TODO: draw a compass
 // TODO: implement strafing
 // TODO: implement mouse control
@@ -27,6 +26,7 @@
 #include <utility> // pair
 #include <algorithm> // sort, find
 #include <vector> // vector
+#include <map> // map
 #include <tuple> // tuple
 #include <cstdio> // swprintf_s
 #include <cstdint> // types
@@ -154,13 +154,15 @@ public:
 			float fEyeX = sinf(fRayAngle); // Unit vector for ray in player space
 			float fEyeY = cosf(fRayAngle);
 
+			int nTestX;
+			int nTestY;
 			while (!bHitWall && fDistanceToWall < fDepth)
 			{
 				fDistanceToWall += 0.1f;
 
 				// line of a given distance (remember, line equation = y=mx+b where m is the slope and b is the y - intercept)
-				int nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
-				int nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
+				nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
+				nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
 
 				// Test if ray is out of bounds
 				if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight)
@@ -229,7 +231,10 @@ public:
 				if (y < nCeiling) // the cell must be part of the ceiling
 					Draw(x, y, 0x2588, nCeilingColors[nAbsLevelNumber - 1]); // sky (0x2588 == █ full block)
 				else if (y > nCeiling && y <= nFloor)
-					Draw(x, y, nShade, FG_BLUE); // wall
+				{
+					uint8_t nTileIndex = vecTileIndexes[nTestY * nMapWidth + nTestX];
+					Draw(x, y, nShade, mTileColors[nTileIndex]); // wall
+				}
 				else
 				{
 					// Shade floor based on distance
@@ -245,7 +250,7 @@ public:
 
 		}
 
-		// Display stats
+		// UI
 		if (bIsDebugInfoVisible)
 		{
 			// TODO: do I put this into a lambda function? does it is worth? how so?
@@ -255,7 +260,6 @@ public:
 			std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
 			DrawString(0, 0, wsHud, FG_GREEN);
 		}
-
 
 		if (bIsMinimapVisible)
 		{
@@ -268,7 +272,7 @@ public:
 				}
 
 			// marker to show where the player is
-			Draw((int)fPlayerX + 1, (int)fPlayerY + 2, L'P');
+			Draw((int)fPlayerX + 1, (int)fPlayerY + 2, L'P', FG_CYAN);
 		}
 
 		if (bIsHelpDialogVisible)
@@ -286,6 +290,44 @@ public:
 			DrawString(x, y++, L"P = PREVIOUS LEVEL", c);
 		}
 
+
+		/*
+		// palette test
+		int tmp = 4;
+		DrawString(80, tmp++, L"FG_BLACK", FG_BLACK);
+		DrawString(80, tmp++, L"FG_DARK_BLUE", FG_DARK_BLUE);// = 0x0001,
+		DrawString(80, tmp++, L"FG_DARK_GREEN", FG_DARK_GREEN);// = 0x0002,
+		DrawString(80, tmp++, L"FG_DARK_CYAN", FG_DARK_CYAN);// = 0x0003,
+		DrawString(80, tmp++, L"FG_DARK_RED", FG_DARK_RED);// = 0x0004,
+		DrawString(80, tmp++, L"FG_DARK_MAGENTA", FG_DARK_MAGENTA);// = 0x0005,
+		DrawString(80, tmp++, L"FG_DARK_YELLOW", FG_DARK_YELLOW);// = 0x0006,
+		DrawString(80, tmp++, L"FG_GREY", FG_GREY);// = 0x0007, // Thanks MS :-/
+		DrawString(80, tmp++, L"FG_DARK_GREY", FG_DARK_GREY);// = 0x0008,
+		DrawString(80, tmp++, L"FG_BLUE", FG_BLUE);// = 0x0009,
+		DrawString(80, tmp++, L"FG_GREEN", FG_GREEN);// = 0x000A,
+		DrawString(80, tmp++, L"FG_CYAN", FG_CYAN);// = 0x000B,
+		DrawString(80, tmp++, L"FG_RED", FG_RED);// = 0x000C,
+		DrawString(80, tmp++, L"FG_MAGENTA", FG_MAGENTA);// = 0x000D,
+		DrawString(80, tmp++, L"FG_YELLOW", FG_YELLOW);// = 0x000E,
+		DrawString(80, tmp++, L"FG_WHITE", FG_WHITE);// = 0x000F,
+		DrawString(80, tmp++, L"BG_BLACK", BG_BLACK);// = 0x0000,
+		DrawString(80, tmp++, L"BG_DARK_BLUE", BG_DARK_BLUE);// = 0x0010,
+		DrawString(80, tmp++, L"BG_DARK_GREEN", BG_DARK_GREEN);// = 0x0020,
+		DrawString(80, tmp++, L"BG_DARK_CYAN", BG_DARK_CYAN);// = 0x0030,
+		DrawString(80, tmp++, L"BG_DARK_RED", BG_DARK_RED);// = 0x0040,
+		DrawString(80, tmp++, L"BG_DARK_MAGENTA", BG_DARK_MAGENTA);// = 0x0050,
+		DrawString(80, tmp++, L"BG_DARK_YELLOW", BG_DARK_YELLOW);// = 0x0060,
+		DrawString(80, tmp++, L"BG_GREY", BG_GREY);// = 0x0070,
+		DrawString(80, tmp++, L"BG_DARK_GREY", BG_DARK_GREY);// = 0x0080,
+		DrawString(80, tmp++, L"BG_BLUE", BG_BLUE);// = 0x0090,
+		DrawString(80, tmp++, L"BG_GREEN", BG_GREEN);// = 0x00A0,
+		DrawString(80, tmp++, L"BG_CYAN", BG_CYAN);// = 0x00B0,
+		DrawString(80, tmp++, L"BG_RED", BG_RED);// = 0x00C0,
+		DrawString(80, tmp++, L"BG_MAGENTA", BG_MAGENTA);// = 0x00D0,
+		DrawString(80, tmp++, L"BG_YELLOW", BG_YELLOW);// = 0x00E0,
+		DrawString(80, tmp++, L"BG_WHITE", BG_WHITE);// = 0x00F0,
+		*/
+
 		return true;
 	}
 
@@ -294,18 +336,54 @@ private:
 	float fPlayerX = 0.0f;
 	float fPlayerY = 0.0f;
 	float fPlayerA = 0.0f; // in radians
-	float fSpeed = 5.0f; // walking speed
+	float fSpeed = 10.0f; // walking speed
 
 	// map & level
-	int nMapHeight = 64, nMapWidth = 64;
+	const int nMapHeight = 64, nMapWidth = 64;
 	std::wstring map;
 	std::string sLevelName;
-	const uint8_t nMaxMaps = 100, nLevelsPerEpisode = 10, nMaxEpisodes = 1;
-	uint8_t nEpisode = 1, nLevel = 1, nAbsLevelNumber; // E1M1 = startup map
-	COLOUR nCeilingColors[10] = { FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_MAGENTA };
+	const uint8_t nMaxMaps = 100, nMaxEpisodes = 1;
+	uint8_t nEpisode = 1, nLevel = 9, nAbsLevelNumber; // E1M1 = startup map
+	static constexpr uint8_t nLevelsPerEpisode = 10;
+	std::vector<uint8_t> vecTileIndexes;
+	std::map<uint32_t, COLOUR> mTileColors = {
+		{ 1, FG_GREY },
+		{ 2, FG_GREY },
+		{ 3, FG_GREY },
+		{ 4, FG_GREY },
+		{ 5, FG_BLUE },
+		{ 6, FG_GREY },
+		{ 7, FG_BLUE },
+		{ 8, FG_BLUE },
+		{ 9, FG_BLUE },
+		{ 10, FG_DARK_YELLOW },
+		{ 11, FG_DARK_YELLOW },
+		{ 12, FG_DARK_YELLOW },
+		{ 13, FG_GREY },
+		{ 14, FG_CYAN },
+		{ 15, FG_CYAN },
+		{ 16, FG_GREEN },
+		{ 17, FG_RED },
+		{ 18, FG_RED },
+		{ 19, FG_DARK_MAGENTA },
+		{ 20, FG_DARK_MAGENTA },
+		{ 21, FG_GREY },
+		{ 22, FG_GREY },
+		{ 23, FG_DARK_YELLOW },
+		{ 24, FG_YELLOW },
+		{ 25, FG_DARK_MAGENTA },
+		{ 26, FG_YELLOW },
+		{ 27, FG_GREY },
+		{ 28, FG_GREY },
+		{ 50, FG_CYAN },
+		{ 51, FG_CYAN },
+		{ 52, FG_GREY },
+		{ 53, FG_GREY }
+	};
+	const COLOUR nCeilingColors[nLevelsPerEpisode] = { FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_MAGENTA };
 
 	// projection
-	float fDepth = 16.0f;
+	float fDepth = 30.0f; //16.0f;
 	float fFOV = 3.14159f / 4.0f; // something like PI / 4 (quite a narrow field of view) [45 degrees]
 
 	// UI
@@ -595,9 +673,12 @@ private:
 
 		//std::vector<std::tuple<uint32_t, uint32_t>> vecPlayerStartingPositions;
 
+		vecTileIndexes.clear();
 		uint32_t nTi = 0, nTiX = 0, nTiY = 0;
 		for (const auto& nTile : vecTiles)
 		{
+			vecTileIndexes.push_back(nTile);
+
 			uint8_t nObject = vecObjects[nTi]; // object in current position
 
 			bool bIsWall = std::find(vecRefWallTiles.begin(), vecRefWallTiles.end(), nTile) != vecRefWallTiles.end();
