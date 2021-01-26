@@ -12,6 +12,8 @@
 // https://lodev.org/cgtutor/raycasting2.html
 // https://lodev.org/cgtutor/raycasting3.html
 
+// TODO: verify "const correctness" (https://isocpp.org/wiki/faq/const-correctness) (https://www.cprogramming.com/tutorial/const_correctness.html) (https://code.tutsplus.com/articles/c-succinctly-pointers-references-and-const-correctness--mobile-22055)
+
 // TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: correct tile rendering order, player positioning and initial rotation angle
 // TODO: draw a compass
@@ -255,7 +257,7 @@ public:
 		{
 			// TODO: do I put this into a lambda function? does it is worth? how so?
 			//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
-			std::stringstream ss; ss << "X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime) << ", LEVEL=" << sLevelName.c_str();
+			std::stringstream ss; ss << "LEVEL=" << sLevelName.c_str() << ", X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime);
 			std::string sHud = ss.str(); // convert std::stringstream to std::string
 			std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
 			DrawString(0, 0, wsHud, FG_GREEN);
@@ -268,7 +270,10 @@ public:
 				for (int ny = 0; ny < nMapHeight; ny++)
 				{
 					// + 1 here to not overwrite the stats
-					Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx]);
+					//Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx]);
+
+					uint8_t nTileIndex = vecTileIndexes[ny * nMapWidth + nx];
+					Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx], mTileColors[nTileIndex]);
 				}
 
 			// marker to show where the player is
@@ -343,42 +348,14 @@ private:
 	std::wstring map;
 	std::string sLevelName;
 	const uint8_t nMaxMaps = 100, nMaxEpisodes = 1;
-	uint8_t nEpisode = 1, nLevel = 9, nAbsLevelNumber; // E1M1 = startup map
+	uint8_t nEpisode = 1, nLevel = 1, nAbsLevelNumber; // E1M1 = startup map
 	static constexpr uint8_t nLevelsPerEpisode = 10;
 	std::vector<uint8_t> vecTileIndexes;
-	std::map<uint32_t, COLOUR> mTileColors = {
-		{ 1, FG_GREY },
-		{ 2, FG_GREY },
-		{ 3, FG_GREY },
-		{ 4, FG_GREY },
-		{ 5, FG_BLUE },
-		{ 6, FG_GREY },
-		{ 7, FG_BLUE },
-		{ 8, FG_BLUE },
-		{ 9, FG_BLUE },
-		{ 10, FG_DARK_YELLOW },
-		{ 11, FG_DARK_YELLOW },
-		{ 12, FG_DARK_YELLOW },
-		{ 13, FG_GREY },
-		{ 14, FG_CYAN },
-		{ 15, FG_CYAN },
-		{ 16, FG_GREEN },
-		{ 17, FG_RED },
-		{ 18, FG_RED },
-		{ 19, FG_DARK_MAGENTA },
-		{ 20, FG_DARK_MAGENTA },
-		{ 21, FG_GREY },
-		{ 22, FG_GREY },
-		{ 23, FG_DARK_YELLOW },
-		{ 24, FG_YELLOW },
-		{ 25, FG_DARK_MAGENTA },
-		{ 26, FG_YELLOW },
-		{ 27, FG_GREY },
-		{ 28, FG_GREY },
-		{ 50, FG_CYAN },
-		{ 51, FG_CYAN },
-		{ 52, FG_GREY },
-		{ 53, FG_GREY }
+	std::map<uint8_t, COLOUR> mTileColors = {
+		{ 1, FG_GREY }, { 2, FG_GREY }, { 3, FG_GREY }, { 4, FG_GREY }, { 5, FG_BLUE }, { 6, FG_GREY }, { 7, FG_BLUE }, { 8, FG_BLUE }, { 9, FG_BLUE }, { 10, FG_DARK_YELLOW },
+		{ 11, FG_DARK_YELLOW }, { 12, FG_DARK_YELLOW }, { 13, FG_DARK_GREY }, { 14, FG_CYAN }, { 15, FG_CYAN }, { 16, FG_GREEN }, { 17, FG_RED }, { 18, FG_RED }, { 19, FG_DARK_MAGENTA }, { 20, FG_DARK_MAGENTA },
+		{ 21, FG_DARK_GREY }, { 22, FG_DARK_GREY }, { 23, FG_DARK_YELLOW }, { 24, FG_YELLOW }, { 25, FG_DARK_MAGENTA }, { 26, FG_YELLOW }, { 27, FG_GREY }, { 28, FG_GREY },
+		{ 50, FG_CYAN }, { 51, FG_CYAN }, { 52, FG_GREY }, { 53, FG_GREY }
 	};
 	const COLOUR nCeilingColors[nLevelsPerEpisode] = { FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_MAGENTA };
 
@@ -544,7 +521,6 @@ private:
 			ifs.read((char*)&nExpandedLength, sizeof(uint16_t)); // number of bytes (not words) in decompressed data
 
 			// 3 - then decompresses the chunk of data with Carmack's Algorithm
-			// https://1drv.ms/u/s!Ao1E4OCcZiFLn8MQ77qdfT-jaoEBVg
 			std::vector<uint8_t> vecCarmack = ReadBuffer2Vector(ifs, nLength - 2);
 			std::vector<uint32_t> vecExpandedData = CarmackExpand(vecCarmack, nExpandedLength); // each entry in vecExpandedData is a word
 
@@ -582,7 +558,7 @@ private:
 			return L""; // Invalid header file. Magic word not supported.
 
 
-		headFile.read((char*)&header.nMaps, nMaxMaps * sizeof(uint32_t));
+		headFile.read((char*)&header.nMaps, static_cast<std::streamsize>(nMaxMaps) * sizeof(uint32_t));
 		for (uint8_t i = 0; i < nMaxMaps; i++) if (header.nMaps[i] > 0) header.nTotalMaps++;
 
 		headFile.close();
@@ -611,8 +587,8 @@ private:
 			//  - plane 2: The third grid is used to contain operational and logical information about the level. It holds the "turning points" for the game's enemies. And other information used by the game engine.
 			plane_t planes[nTotalPlanes];
 
-			uint16_t nWidth{}; // Width of level (in tiles)
-			uint16_t nHeight{}; // Height of level (in tiles)
+			uint16_t nWidth = 0; // Width of level (in tiles)
+			uint16_t nHeight = 0; // Height of level (in tiles)
 
 			std::string sName; // Internal name for level (used only by editor, not displayed in-game. null-terminated)
 		} levelHeader;
@@ -633,9 +609,9 @@ private:
 		// possible to read through the entire file decompressing chunks as they're found.
 		gamemapFile.seekg(header.nMaps[nAbsLevelNumber - 1]);
 
-		uint32_t nOffsets[nTotalPlanes];
+		uint32_t nOffsets[nTotalPlanes] = {};
 		gamemapFile.read((char*)&nOffsets, nTotalPlanes * sizeof(uint32_t));
-		uint16_t nLengths[nTotalPlanes];
+		uint16_t nLengths[nTotalPlanes] = {};
 		gamemapFile.read((char*)&nLengths, nTotalPlanes * sizeof(uint16_t));
 		for (uint8_t i = 0; i < nTotalPlanes; i++)
 		{
@@ -679,14 +655,14 @@ private:
 		{
 			vecTileIndexes.push_back(nTile);
 
-			uint8_t nObject = vecObjects[nTi]; // object in current position
+			const uint8_t nObject = vecObjects[nTi]; // object in current position
 
-			bool bIsWall = std::find(vecRefWallTiles.begin(), vecRefWallTiles.end(), nTile) != vecRefWallTiles.end();
+			const bool bIsWall = std::find(vecRefWallTiles.begin(), vecRefWallTiles.end(), nTile) != vecRefWallTiles.end();
 			//bool bIsDoor = std::find(vecDoorTiles.begin(), vecDoorTiles.end(), nTile) != vecDoorTiles.end();
 
 			auto it = std::find(vecRefPlayerTiles.begin(), vecRefPlayerTiles.end(), nObject);
-			int orientation = std::distance(vecRefPlayerTiles.begin(), it); // each offset position in vecRefPlayerTiles vector is equivalent to 90 degrees of rotation on y axis
-			bool bIsPlayer = (it != vecRefPlayerTiles.end());
+			const int orientation = std::distance(vecRefPlayerTiles.begin(), it); // each offset position in vecRefPlayerTiles vector is equivalent to 90 degrees of rotation on y axis
+			const bool bIsPlayer = (it != vecRefPlayerTiles.end());
 
 			if (bIsWall)	sMap.append(L"#");
 			else			sMap.append(L".");
