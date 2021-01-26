@@ -255,12 +255,17 @@ public:
 		// UI
 		if (bIsDebugInfoVisible)
 		{
-			// TODO: do I put this into a lambda function? does it is worth? how so?
+			// Converts a std::stringstream to a std::wstring
+			auto StringStreamToWString = [](const std::stringstream& sFrom)
+			{
+				std::wstring wsTo;
+				std::string sString = sFrom.str();
+				return wsTo.assign(sString.begin(), sString.end());
+			};
+
 			//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
 			std::stringstream ss; ss << "LEVEL=" << sLevelName.c_str() << ", X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime);
-			std::string sHud = ss.str(); // convert std::stringstream to std::string
-			std::wstring wsHud(sHud.begin(), sHud.end()); // convert std::string to std::wstring
-			DrawString(0, 0, wsHud, FG_GREEN);
+			DrawString(0, 0, StringStreamToWString(ss), FG_GREEN);
 		}
 
 		if (bIsMinimapVisible)
