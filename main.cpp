@@ -12,14 +12,12 @@
 // https://lodev.org/cgtutor/raycasting2.html
 // https://lodev.org/cgtutor/raycasting3.html
 
-// TODO: verify "const correctness" (https://isocpp.org/wiki/faq/const-correctness) (https://www.cprogramming.com/tutorial/const_correctness.html) (https://code.tutsplus.com/articles/c-succinctly-pointers-references-and-const-correctness--mobile-22055)
-
 // TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: correct tile rendering order, player positioning and initial rotation angle
 // TODO: draw a compass
 // TODO: implement strafing
 // TODO: implement mouse control
-// TODO: shrink data sizes where possible
+// TODO: repository README
 
 #include <iostream>
 #include <fstream> // ifstream
@@ -259,7 +257,7 @@ public:
 			auto StringStreamToWString = [](const std::stringstream& sFrom)
 			{
 				std::wstring wsTo;
-				std::string sString = sFrom.str();
+				const std::string sString = sFrom.str();
 				return wsTo.assign(sString.begin(), sString.end());
 			};
 
