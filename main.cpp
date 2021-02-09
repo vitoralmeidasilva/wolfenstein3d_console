@@ -12,7 +12,8 @@
 // https://lodev.org/cgtutor/raycasting2.html
 // https://lodev.org/cgtutor/raycasting3.html
 
-// TODO: understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
+// TODO: (CORE THAT I NEED TO LEARN) understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
+// TODO: why the rendering is inverted???
 // TODO: correct tile rendering order, player positioning and initial rotation angle
 // TODO: draw a compass
 // TODO: implement strafing
@@ -168,7 +169,7 @@ public:
 				if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight)
 				{
 					// out of bounds of our map
-					bHitWall = false; // Just set distance to maximum depth
+					bHitWall = true; // Just set distance to maximum depth
 					fDistanceToWall = fDepth;
 				}
 				else
@@ -348,7 +349,7 @@ private:
 
 	// map & level
 	const int nMapHeight = 64, nMapWidth = 64;
-	std::wstring map;
+	std::wstring map = L"";
 	std::string sLevelName;
 	const uint8_t nMaxMaps = 100, nMaxEpisodes = 1;
 	uint8_t nEpisode = 1, nLevel = 1, nAbsLevelNumber; // E1M1 = startup map
@@ -664,7 +665,6 @@ private:
 			//bool bIsDoor = std::find(vecDoorTiles.begin(), vecDoorTiles.end(), nTile) != vecDoorTiles.end();
 
 			auto it = std::find(vecRefPlayerTiles.begin(), vecRefPlayerTiles.end(), nObject);
-			const int orientation = std::distance(vecRefPlayerTiles.begin(), it); // each offset position in vecRefPlayerTiles vector is equivalent to 90 degrees of rotation on y axis
 			const bool bIsPlayer = (it != vecRefPlayerTiles.end());
 
 			if (bIsWall)	sMap.append(L"#");
@@ -672,18 +672,20 @@ private:
 
 			if (bIsPlayer)
 			{
+				const int orientation = std::distance(vecRefPlayerTiles.begin(), it); // each offset position in vecRefPlayerTiles vector is equivalent to 90 degrees of rotation on y axis
+
 				//vecPlayerStartingPositions.push_back(std::make_tuple(nTiX, nTiY));
 				fPlayerX = (float)nTiX;
 				fPlayerY = (float)nTiY;
 
 				//const float fStartPlayerAngles[] = { 0.0f, 1.5708f, 3.14159f, 4.71239f }; // startup player angle in radians (0 = north, 90 = east, 180 = south, 270 = west)
-				//const float fStartPlayerAngles[] = { 
-				//	0.0f, 
-				//	1.5708f, 
-				//	3.14159f, 
-				//	4.71239f 
-				//};
-				//fPlayerAng -= fStartPlayerAngles[orientation];
+				const float fStartPlayerAngles[] = {
+					0.0f,
+					1.5708f,
+					3.14159f,
+					4.71239f
+				};
+				fPlayerA += fStartPlayerAngles[orientation];
 			}
 
 			nTiX++;
