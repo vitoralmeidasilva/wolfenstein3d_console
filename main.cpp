@@ -34,14 +34,20 @@
 
 using namespace std;
 
-#include "olcConsoleGameEngine.h"
+//#include "olcConsoleGameEngine.h"
 
-class ConFPSWolf : public olcConsoleGameEngine
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
+
+using namespace olc;
+
+class ConFPSWolf : public PixelGameEngine
 {
 public:
 	ConFPSWolf()
 	{
-		m_sAppName = L"Wolfenstein 3D Console Version";
+		//m_sAppName = L"Wolfenstein 3D Console Version";
+		sAppName = "Wolfenstein 3D Console Version";
 	}
 
 	virtual bool OnUserCreate()
@@ -53,20 +59,26 @@ public:
 
 	virtual bool OnUserUpdate(float fElapsedTime)
 	{
+		FillRect(0, 0, ScreenWidth(), ScreenHeight(), BLACK);
+
 		// Minimap
-		if (m_keys[L'M'].bPressed)
+		//if (m_keys[L'M'].bPressed)
+		if (GetKey(olc::Key::M).bPressed)
 			bIsMinimapVisible = !bIsMinimapVisible;
 
 		// Help dialog
-		if (m_keys[L'H'].bPressed)
+		//if (m_keys[L'H'].bPressed)
+		if (GetKey(olc::Key::H).bPressed)
 			bIsHelpDialogVisible = !bIsHelpDialogVisible;
 
 		// Debug info
-		if (m_keys[L'I'].bPressed)
+		//if (m_keys[L'I'].bPressed)
+		if (GetKey(olc::Key::I).bPressed)
 			bIsDebugInfoVisible = !bIsDebugInfoVisible;
 
 		// Next level
-		if (m_keys[L'N'].bPressed)
+		//if (m_keys[L'N'].bPressed)
+		if (GetKey(olc::Key::N).bPressed)
 		{
 			nLevel = ++nLevel % (nLevelsPerEpisode + 1); // [1 10]
 			if (nLevel == 0)
@@ -85,7 +97,8 @@ public:
 		}
 
 		// Previous level
-		if (m_keys[L'P'].bPressed)
+		//if (m_keys[L'P'].bPressed)
+		if (GetKey(olc::Key::P).bPressed)
 		{
 			nLevel = --nLevel % (nLevelsPerEpisode + 1); // [1 10]
 			if (nLevel == 0)
@@ -105,13 +118,16 @@ public:
 
 		// Controls
 		// Handle CCW Rotation
-		if (m_keys[L'A'].bHeld)
-			fPlayerA -= (0.8f) * fElapsedTime; // 0.1 radians per frame update
+		//if (m_keys[L'A'].bHeld)
+		if (GetKey(olc::Key::A).bHeld)
+				fPlayerA -= (0.8f) * fElapsedTime; // 0.1 radians per frame update
 
-		if (m_keys[L'D'].bHeld)
-			fPlayerA += (0.8f) * fElapsedTime;
+		//if (m_keys[L'D'].bHeld)
+		if (GetKey(olc::Key::D).bHeld)
+				fPlayerA += (0.8f) * fElapsedTime;
 
-		if (m_keys[L'W'].bHeld)
+		//if (m_keys[L'W'].bHeld)
+		if (GetKey(olc::Key::W).bHeld)
 		{
 			// project the player forwards
 			fPlayerX += sinf(fPlayerA) * fSpeed * fElapsedTime; // WHY SIN here instead of COS??? Is it because coordinates are inverted?? 
@@ -125,7 +141,8 @@ public:
 			}
 		}
 
-		if (m_keys[L'S'].bHeld)
+		//if (m_keys[L'S'].bHeld)
+		if (GetKey(olc::Key::S).bHeld)
 		{
 			fPlayerX -= sinf(fPlayerA) * fSpeed * fElapsedTime;
 			fPlayerY -= cosf(fPlayerA) * fSpeed * fElapsedTime;
@@ -230,11 +247,13 @@ public:
 			for (int y = 0; y < ScreenHeight(); y++)
 			{
 				if (y < nCeiling) // the cell must be part of the ceiling
-					Draw(x, y, 0x2588, nCeilingColors[nAbsLevelNumber - 1]); // sky (0x2588 == █ full block)
+					//Draw(x, y, 0x2588, nCeilingColors[nAbsLevelNumber - 1]); // sky (0x2588 == █ full block)
+					Draw(x, y, nCeilingColors[nAbsLevelNumber - 1]); // sky (0x2588 == █ full block)
 				else if (y > nCeiling && y <= nFloor)
 				{
 					uint8_t nTileIndex = vecTileIndexes[nTestY * nMapWidth + nTestX];
-					Draw(x, y, nShade, mTileColors[nTileIndex]); // wall
+					//Draw(x, y, nShade, mTileColors[nTileIndex]); // wall
+					Draw(x, y, (bBoundary) ? BLACK : mTileColors[nTileIndex]); // wall
 				}
 				else
 				{
@@ -245,7 +264,9 @@ public:
 					else if (b < 0.75)	nShadeFloor = '.';
 					else if (b < 0.9)	nShadeFloor = '-';
 					else				nShadeFloor = ' ';
-					Draw(x, y, nShadeFloor, FG_GREY); // floor
+					//Draw(x, y, nShadeFloor, GREY); // floor (original)
+					Draw(x, y, GREY); // floor // new 1
+					//DrawString(x, y, std::to_string(nShadeFloor), GREY); // new 2
 				}
 			}
 
@@ -264,39 +285,41 @@ public:
 
 			//swprintf_s(screen, 80, L"X=%3.2f, Y=%3.2f, A=%3.2f, FPS=%3.2f, LEVEL=%hs", fPlayerX, fPlayerY, fPlayerA, 1.0f / fElapsedTime, sLevelName.c_str());
 			std::stringstream ss; ss << "LEVEL=" << sLevelName.c_str() << ", X=" << fPlayerX << ", Y=" << fPlayerY << ", A=" << fPlayerA << ", FPS=" << (1.0f / fElapsedTime);
-			DrawString(0, 0, StringStreamToWString(ss), FG_GREEN);
+			//DrawString(0, 0, StringStreamToWString(ss), GREEN);
+			DrawString(0, 0, ss.str(), GREEN);
 		}
 
-		if (bIsMinimapVisible)
-		{
-			// Display Map (only displaying half)
-			for (int nx = 0; nx < nMapWidth; nx++)
-				for (int ny = 0; ny < nMapHeight; ny++)
-				{
-					// + 1 here to not overwrite the stats
-					//Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx]);
+		//if (bIsMinimapVisible)
+		//{
+		//	// Display Map (only displaying half)
+		//	for (int nx = 0; nx < nMapWidth; nx++)
+		//		for (int ny = 0; ny < nMapHeight; ny++)
+		//		{
+		//			// + 1 here to not overwrite the stats
+		//			//Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx]);
 
-					uint8_t nTileIndex = vecTileIndexes[ny * nMapWidth + nx];
-					Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx], mTileColors[nTileIndex]);
-				}
+		//			uint8_t nTileIndex = vecTileIndexes[ny * nMapWidth + nx];
+		//			Draw(nx + 1, ny + 2, map[ny * nMapWidth + nx], mTileColors[nTileIndex]);
+		//		}
 
-			// marker to show where the player is
-			Draw((int)fPlayerX + 1, (int)fPlayerY + 2, L'P', FG_CYAN);
-		}
+		//	// marker to show where the player is
+		//	Draw((int)fPlayerX + 1, (int)fPlayerY + 2, L'P', CYAN);
+		//}
 
 		if (bIsHelpDialogVisible)
 		{
-			int x = 85, y = 20, c = FG_GREEN;
+			int x = 85, y = 20;
+			Pixel c = GREEN;
 
-			DrawString(x, y++, L"*** INSTRUCTIONS ***", c);
+			DrawString(x, y++, "*** INSTRUCTIONS ***", c);
 			y += 2;
 
-			DrawString(x, y++, L"H = TOGGLE HELP DIALOG", c);
-			DrawString(x, y++, L"ASDFW = MOVEMENT", c);
-			DrawString(x, y++, L"M = MINIMAP", c);
-			DrawString(x, y++, L"I = DEBUG INFO", c);
-			DrawString(x, y++, L"N = NEXT LEVEL", c);
-			DrawString(x, y++, L"P = PREVIOUS LEVEL", c);
+			DrawString(x, y++, "H = TOGGLE HELP DIALOG", c);
+			DrawString(x, y++, "ASDFW = MOVEMENT", c);
+			DrawString(x, y++, "M = MINIMAP", c);
+			DrawString(x, y++, "I = DEBUG INFO", c);
+			DrawString(x, y++, "N = NEXT LEVEL", c);
+			DrawString(x, y++, "P = PREVIOUS LEVEL", c);
 		}
 
 
@@ -355,13 +378,15 @@ private:
 	uint8_t nEpisode = 1, nLevel = 1, nAbsLevelNumber; // E1M1 = startup map
 	static constexpr uint8_t nLevelsPerEpisode = 10;
 	std::vector<uint8_t> vecTileIndexes;
-	std::map<uint8_t, COLOUR> mTileColors = {
-		{ 1, FG_GREY }, { 2, FG_GREY }, { 3, FG_GREY }, { 4, FG_GREY }, { 5, FG_BLUE }, { 6, FG_GREY }, { 7, FG_BLUE }, { 8, FG_BLUE }, { 9, FG_BLUE }, { 10, FG_DARK_YELLOW },
-		{ 11, FG_DARK_YELLOW }, { 12, FG_DARK_YELLOW }, { 13, FG_DARK_GREY }, { 14, FG_CYAN }, { 15, FG_CYAN }, { 16, FG_GREEN }, { 17, FG_RED }, { 18, FG_RED }, { 19, FG_DARK_MAGENTA }, { 20, FG_DARK_MAGENTA },
-		{ 21, FG_DARK_GREY }, { 22, FG_DARK_GREY }, { 23, FG_DARK_YELLOW }, { 24, FG_YELLOW }, { 25, FG_DARK_MAGENTA }, { 26, FG_YELLOW }, { 27, FG_GREY }, { 28, FG_GREY },
-		{ 50, FG_CYAN }, { 51, FG_CYAN }, { 52, FG_GREY }, { 53, FG_GREY }
+	//std::map<uint8_t, COLOUR> mTileColors = {
+	std::map<uint8_t, Pixel> mTileColors = {
+		{ 1, GREY }, { 2, GREY }, { 3, GREY }, { 4, GREY }, { 5, BLUE }, { 6, GREY }, { 7, BLUE }, { 8, BLUE }, { 9, BLUE }, { 10, DARK_YELLOW },
+		{ 11, DARK_YELLOW }, { 12, DARK_YELLOW }, { 13, DARK_GREY }, { 14, CYAN }, { 15, CYAN }, { 16, GREEN }, { 17, RED }, { 18, RED }, { 19, DARK_MAGENTA }, { 20, DARK_MAGENTA },
+		{ 21, DARK_GREY }, { 22, DARK_GREY }, { 23, DARK_YELLOW }, { 24, YELLOW }, { 25, DARK_MAGENTA }, { 26, YELLOW }, { 27, GREY }, { 28, GREY },
+		{ 50, CYAN }, { 51, CYAN }, { 52, GREY }, { 53, GREY }
 	};
-	const COLOUR nCeilingColors[nLevelsPerEpisode] = { FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_MAGENTA };
+	//const COLOUR nCeilingColors[nLevelsPerEpisode] = { DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, MAGENTA };
+	const Pixel nCeilingColors[nLevelsPerEpisode] = { DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, DARK_GREY, MAGENTA };
 
 	// projection
 	float fDepth = 30.0f; //16.0f;
@@ -707,7 +732,8 @@ private:
 int main()
 {
 	ConFPSWolf game;
-	game.ConstructConsole(120, 80, 8, 8);
+	//game.ConstructConsole(120, 80, 8, 8);
+	game.Construct(120, 80, 8, 8, false, false, false);
 	game.Start();
 
 	return 0;
