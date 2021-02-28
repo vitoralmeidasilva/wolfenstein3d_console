@@ -1,4 +1,4 @@
-# Project Title
+# Console Wolfenstein 3d
 
 Simple ASCII renderer for Wolfenstein 3d maps/levels.
 
@@ -11,6 +11,7 @@ Simple ASCII renderer for Wolfenstein 3d maps/levels.
 
 * olcConsoleGameEngine (included in the source)
 * Visual Studio 2019
+* Wolfenstein 3d Shareware (included)
 
 ### Installing
 
