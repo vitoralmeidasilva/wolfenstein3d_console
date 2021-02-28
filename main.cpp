@@ -12,6 +12,9 @@
 // https://lodev.org/cgtutor/raycasting2.html
 // https://lodev.org/cgtutor/raycasting3.html
 
+// TODO: texture mapping and sampling (nice visual improvement)
+// 1 - get all textures
+// 2 - sample and render (palette)
 // TODO: (CORE THAT I NEED TO LEARN) understand all raycasting math (DO NOT DO NOTHING MORE UNLESS YOU REALLY UNDERSTAND THE BASIS!) REALLY UNDERSTAND THE WHY!!!!!!!!!!!!!!!
 // TODO: why the rendering is inverted???
 // TODO: correct tile rendering order, player positioning and initial rotation angle
@@ -28,6 +31,7 @@
 #include <algorithm> // sort, find
 #include <vector> // vector
 #include <map> // map
+#include <array> // array
 #include <tuple> // tuple
 #include <cstdio> // swprintf_s
 #include <cstdint> // types
@@ -372,6 +376,17 @@ private:
 	bool bIsHelpDialogVisible = true;
 	bool bIsDebugInfoVisible = true;
 
+	// texture mapping
+	bool bTextureMapping = true;
+	std::array<COLOUR, 256> palette{
+		FG_BLACK, FG_BLUE, FG_GREEN, FG_CYAN, FG_RED, FG_MAGENTA, FG_DARK_YELLOW, FG_GREY, FG_DARK_GREY, FG_DARK_CYAN,
+		FG_GREEN, FG_CYAN, FG_RED, FG_MAGENTA, FG_YELLOW, FG_WHITE, FG_WHITE, FG_WHITE, FG_GREY, FG_GREY,
+		FG_GREY, FG_GREY, FG_GREY, FG_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY, FG_DARK_GREY,
+		FG_DARK_GREY, FG_BLACK, FG_RED, FG_RED, FG_RED, FG_RED, FG_RED, FG_RED, FG_RED, FG_RED,
+		FG_RED, FG_RED, FG_DARK_RED, FG_DARK_RED, FG_DARK_RED, FG_DARK_RED, FG_DARK_RED, FG_DARK_RED, FG_WHITE, FG_WHITE
+
+	};
+
 
 	std::wstring LoadWolf3dMap()
 	{
@@ -536,6 +551,36 @@ private:
 			// 4 - and decompress the result with the RLEW algorithm. 
 			return RLEWExpand(vecExpandedData, nExpandedDataSize, nRLE);
 		};
+
+		// Load Textures
+		if (bTextureMapping)
+		{
+			// Extract the Huffman's coding table
+			// The VGADICT file contains the Huffman Node Tree
+			std::array<uint8_t, 1024> dictionary{}; // the file is 1024 bytes long and contains 256 nodes, each node is 4 bytes long
+			std::vector<std::pair<uint16_t, uint16_t>> vecHuffNodes{};
+			std::ifstream dictionaryFile;
+			dictionaryFile.open("./resources/VGADICT.WL1", std::ifstream::binary);
+			if (dictionaryFile.is_open())
+			{
+				dictionaryFile.read((char*)&dictionary, dictionary.size());
+
+				// first node = 0
+				// last node = 255 (never used)
+
+				for (size_t nOffset = 0; nOffset < dictionary.size(); nOffset += sizeof(uint32_t))
+				{
+					vecHuffNodes.push_back(std::make_pair(
+						(dictionary[nOffset + 0] | (dictionary[nOffset + 1] << 8)), // bit0
+						(dictionary[nOffset + 2] | (dictionary[nOffset + 3] << 8))  // bit1
+					));
+				}
+
+				dictionaryFile.close();
+			}
+
+
+		}
 
 		// Load Map Geometry ====================
 
