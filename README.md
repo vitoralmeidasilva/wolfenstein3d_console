@@ -2,7 +2,7 @@
 
 Simple ASCII renderer for Wolfenstein 3d maps/levels.
 
-[![Wolfenstein 3D](https://video.twimg.com/tweet_video/EsRYXegWMAQ20OM.mp4)](https://video.twimg.com/tweet_video/EsRYXegWMAQ20OM.mp4)
+![](./docs/prototype2.gif)
 
 
 ## Getting Started
